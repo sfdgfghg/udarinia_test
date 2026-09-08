@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ударения — тренажёр</title>
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.container {
+    width: 100%;
+    max-width: 720px;
+    background: white;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+h1 {
+    text-align: center;
+    margin: 0 0 24px;
+    color: #333;
+    font-size: 32px;
+}
+.topline {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:#666;
+    font-size:14px;
+    margin-bottom:8px;
+}
+.progress {
+    height: 12px;
+    background:#e9e9ef;
+    border-radius: 99px;
+    overflow:hidden;
+    margin-bottom:36px;
+}
+.progress-fill {
+    height:100%;
+    width:0;
+    background:linear-gradient(90deg,#667eea,#764ba2);
+    transition:width .25s;
+}
+.word {
+    text-align:center;
+    font-size:64px;
+    font-weight:700;
+    color:#222;
+    margin: 20px 0 35px;
+    min-height: 82px;
+}
+.vowel {
+    display:inline-block;
+    cursor:pointer;
+    border-radius:8px;
+    padding:0 1px;
+    transition:.15s;
+}
+.vowel:hover {
+    background:#eef0ff;
+    transform:scale(1.08);
+}
+.vowel.correct {
+    color:#20a05a;
+}
+.vowel.wrong {
+    color:#e53935;
+}
+.feedback {
+    min-height:52px;
+    text-align:center;
+    font-size:22px;
+    font-weight:700;
+    margin-bottom:16px;
+}
+.feedback.correct { color:#20a05a; }
+.feedback.wrong { color:#e53935; }
+button {
+    border:0;
+    border-radius:12px;
+    padding:15px 20px;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
+}
+.next {
+    display:block;
+    width:100%;
+    color:white;
+    background:#667eea;
+}
+.next:hover { background:#5969d8; }
+.hidden { display:none !important; }
+.finish { text-align:center; }
+.finish h2 { color:#333; font-size:30px; }
+.finish p { color:#666; line-height:1.5; }
+.restart {
+    color:white;
+    background:#667eea;
+    width:100%;
+    margin-top:10px;
+}
+.theme {
+    display:block;
+    margin:0 auto 18px;
+    padding:8px 13px;
+    font-size:14px;
+    background:#f0f1f8;
+    color:#444;
+}
+body.dark {
+    background:linear-gradient(135deg,#171b2e 0%,#241538 100%);
+}
+body.dark .container {
+    background:#1d2230;
+}
+body.dark h1, body.dark .word, body.dark .finish h2 {
+    color:#f4f4f5;
+}
+body.dark .topline, body.dark .finish p {
+    color:#aeb4c2;
+}
+body.dark .progress { background:#303646; }
+body.dark .theme { background:#303646; color:#eee; }
+@media (max-width:600px) {
+    .container { padding:22px 16px; border-radius:20px; }
+    h1 { font-size:27px; }
+    .word { font-size:48px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Тренажёр ударений</h1>
+    <button class="theme" id="themeBtn">🌙 Тёмная тема</button>
+
+    <div id="game">
+        <div class="topline">
+            <span id="stageLabel">Этап 1</span>
+            <span id="countLabel">1 / 1</span>
+        </div>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="word" id="word"></div>
+        <div class="feedback" id="feedback"></div>
+        <button class="next hidden" id="nextBtn">Следующее слово →</button>
+    </div>
+
+    <div class="finish hidden" id="finish">
+        <h2>🎉 Все слова пройдены!</h2>
+        <p>Ошибочные слова повторяются до тех пор, пока все ударения не будут выбраны правильно.</p>
+        <button class="restart" id="restartBtn">Начать заново 🔀</button>
+    </div>
+</div>
+
+<script>
+const WORDS = [{"id": 0, "display": "аэропорты", "stress": 5}, {"id": 1, "display": "банты", "stress": 1}, {"id": 2, "display": "бороду", "stress": 1}, {"id": 3, "display": "бухгалтеров", "stress": 4}, {"id": 4, "display": "вероисповедание", "stress": 9}, {"id": 5, "display": "водопровод", "stress": 8}, {"id": 6, "display": "газопровод", "stress": 8}, {"id": 7, "display": "гражданство", "stress": 2}, {"id": 8, "display": "дефис", "stress": 3}, {"id": 9, "display": "диспансер", "stress": 7}, {"id": 10, "display": "договорённость", "stress": 7}, {"id": 11, "display": "документ", "stress": 5}, {"id": 12, "display": "досуг", "stress": 3}, {"id": 13, "display": "еретик", "stress": 4}, {"id": 14, "display": "жалюзи", "stress": 5}, {"id": 15, "display": "значимость", "stress": 2}, {"id": 16, "display": "иксы", "stress": 0}, {"id": 17, "display": "каталог", "stress": 5}, {"id": 18, "display": "квартал", "stress": 5}, {"id": 19, "display": "километр", "stress": 5}, {"id": 20, "display": "конусов", "stress": 1}, {"id": 21, "display": "корысть", "stress": 3}, {"id": 22, "display": "краны", "stress": 2}, {"id": 23, "display": "кремень", "stress": 4}, {"id": 24, "display": "кремня", "stress": 5}, {"id": 25, "display": "лекторов", "stress": 1}, {"id": 26, "display": "локтя", "stress": 1}, {"id": 27, "display": "локтей", "stress": 4}, {"id": 28, "display": "лыжня", "stress": 1}, {"id": 29, "display": "местностей", "stress": 1}, {"id": 30, "display": "намерение", "stress": 3}, {"id": 31, "display": "нарост", "stress": 3}, {"id": 32, "display": "недруг", "stress": 1}, {"id": 33, "display": "недуг", "stress": 3}, {"id": 34, "display": "некролог", "stress": 6}, {"id": 35, "display": "ненависть", "stress": 1}, {"id": 36, "display": "нефтепровод", "stress": 9}, {"id": 37, "display": "новостей", "stress": 6}, {"id": 38, "display": "ноготь", "stress": 1}, {"id": 39, "display": "ногтей", "stress": 4}, {"id": 40, "display": "отзыв", "stress": 0}, {"id": 41, "display": "отзыв", "stress": 3}, {"id": 42, "display": "отрочество", "stress": 0}, {"id": 43, "display": "партер", "stress": 1}, {"id": 44, "display": "портфель", "stress": 5}, {"id": 45, "display": "поручни", "stress": 3}, {"id": 46, "display": "предлог", "stress": 5}, {"id": 47, "display": "призыв", "stress": 4}, {"id": 48, "display": "свёкла", "stress": 2}, {"id": 49, "display": "сироты", "stress": 3}, {"id": 50, "display": "созыв", "stress": 3}, {"id": 51, "display": "сосредоточение", "stress": 8}, {"id": 52, "display": "средства", "stress": 2}, {"id": 53, "display": "статуя", "stress": 2}, {"id": 54, "display": "столяр", "stress": 4}, {"id": 55, "display": "таможня", "stress": 3}, {"id": 56, "display": "торты", "stress": 1}, {"id": 57, "display": "туфля", "stress": 1}, {"id": 58, "display": "цемент", "stress": 3}, {"id": 59, "display": "центнер", "stress": 1}, {"id": 60, "display": "цепочка", "stress": 3}, {"id": 61, "display": "шарфы", "stress": 1}, {"id": 62, "display": "шофёр", "stress": 3}, {"id": 63, "display": "эксперт", "stress": 4}, {"id": 64, "display": "верна", "stress": 4}, {"id": 65, "display": "значимый", "stress": 2}, {"id": 66, "display": "красивее", "stress": 4}, {"id": 67, "display": "красивейший", "stress": 6}, {"id": 68, "display": "кухонный", "stress": 1}, {"id": 69, "display": "ловка", "stress": 1}, {"id": 70, "display": "мозаичный", "stress": 4}, {"id": 71, "display": "оптовый", "stress": 3}, {"id": 72, "display": "прозорливый", "stress": 7}, {"id": 73, "display": "прозорлива", "stress": 7}, {"id": 74, "display": "сливовый", "stress": 4}, {"id": 75, "display": "вручить", "stress": 4}, {"id": 76, "display": "гнала", "stress": 4}, {"id": 77, "display": "гналась", "stress": 4}, {"id": 78, "display": "добрала", "stress": 4}, {"id": 79, "display": "добралась", "stress": 4}, {"id": 80, "display": "дождалась", "stress": 6}, {"id": 81, "display": "дозвониться", "stress": 6}, {"id": 82, "display": "дозировать", "stress": 3}, {"id": 83, "display": "ждала", "stress": 4}, {"id": 84, "display": "жилось", "stress": 1}, {"id": 85, "display": "закупорить", "stress": 3}, {"id": 86, "display": "занять", "stress": 1}, {"id": 87, "display": "занял", "stress": 1}, {"id": 88, "display": "заняла", "stress": 5}, {"id": 89, "display": "заняли", "stress": 1}, {"id": 90, "display": "заперла", "stress": 6}, {"id": 91, "display": "запломбировать", "stress": 11}, {"id": 92, "display": "защемит", "stress": 5}, {"id": 93, "display": "звала", "stress": 4}, {"id": 94, "display": "звонит", "stress": 4}, {"id": 95, "display": "кашлянуть", "stress": 1}, {"id": 96, "display": "клала", "stress": 2}, {"id": 97, "display": "клеить", "stress": 2}, {"id": 98, "display": "кралась", "stress": 2}, {"id": 99, "display": "кровоточить", "stress": 8}, {"id": 100, "display": "лгала", "stress": 4}, {"id": 101, "display": "лила", "stress": 3}, {"id": 102, "display": "лилась", "stress": 3}, {"id": 103, "display": "наврала", "stress": 6}, {"id": 104, "display": "наделит", "stress": 3}, {"id": 105, "display": "надорвалась", "stress": 8}, {"id": 106, "display": "назвалась", "stress": 6}, {"id": 107, "display": "накрениться", "stress": 6}, {"id": 108, "display": "налила", "stress": 5}, {"id": 109, "display": "нарвала", "stress": 6}, {"id": 110, "display": "начать", "stress": 3}, {"id": 111, "display": "начал", "stress": 1}, {"id": 112, "display": "начала", "stress": 1}, {"id": 113, "display": "начали", "stress": 1}, {"id": 114, "display": "обзвонить", "stress": 6}, {"id": 115, "display": "облегчить", "stress": 6}, {"id": 116, "display": "облегчит", "stress": 6}, {"id": 117, "display": "облилась", "stress": 5}, {"id": 118, "display": "обнялась", "stress": 5}, {"id": 119, "display": "обогнала", "stress": 7}, {"id": 120, "display": "ободрала", "stress": 7}, {"id": 121, "display": "ободрить", "stress": 5}, {"id": 122, "display": "ободрит", "stress": 5}, {"id": 123, "display": "ободриться", "stress": 5}, {"id": 124, "display": "обострить", "stress": 6}, {"id": 125, "display": "одолжить", "stress": 5}, {"id": 126, "display": "одолжит", "stress": 5}, {"id": 127, "display": "озлобить", "stress": 5}, {"id": 128, "display": "оклеить", "stress": 4}, {"id": 129, "display": "окружит", "stress": 5}, {"id": 130, "display": "опошлить", "stress": 2}, {"id": 131, "display": "осведомиться", "stress": 3}, {"id": 132, "display": "осведомится", "stress": 3}, {"id": 133, "display": "отбыла", "stress": 3}, {"id": 134, "display": "отдалА", "stress": 3}, {"id": 135, "display": "откупорить", "stress": 3}, {"id": 136, "display": "отозвала", "stress": 7}, {"id": 137, "display": "отозвалась", "stress": 7}, {"id": 138, "display": "перезвонит", "stress": 8}, {"id": 139, "display": "перелила", "stress": 7}, {"id": 140, "display": "плодоноcить", "stress": 8}, {"id": 141, "display": "пломбировать", "stress": 7}, {"id": 142, "display": "повторит", "stress": 6}, {"id": 143, "display": "позвала", "stress": 6}, {"id": 144, "display": "позвонит", "stress": 6}, {"id": 145, "display": "полила", "stress": 5}, {"id": 146, "display": "положить", "stress": 5}, {"id": 147, "display": "положил", "stress": 5}, {"id": 148, "display": "понять", "stress": 3}, {"id": 149, "display": "поняла", "stress": 5}, {"id": 150, "display": "послала", "stress": 6}, {"id": 151, "display": "прибыть", "stress": 4}, {"id": 152, "display": "прибыл", "stress": 2}, {"id": 153, "display": "прибыла", "stress": 2}, {"id": 154, "display": "прибыли", "stress": 2}, {"id": 155, "display": "принять", "stress": 4}, {"id": 156, "display": "принял", "stress": 4}, {"id": 157, "display": "приняла", "stress": 6}, {"id": 158, "display": "приняли", "stress": 2}, {"id": 159, "display": "рвала", "stress": 4}, {"id": 160, "display": "сверлит", "stress": 5}, {"id": 161, "display": "сняла", "stress": 4}, {"id": 162, "display": "сорвала", "stress": 6}, {"id": 163, "display": "создала", "stress": 6}, {"id": 164, "display": "сорит", "stress": 3}, {"id": 165, "display": "убрала", "stress": 5}, {"id": 166, "display": "углубить", "stress": 5}, {"id": 167, "display": "укрепит", "stress": 5}, {"id": 168, "display": "черпать", "stress": 1}, {"id": 169, "display": "щемит", "stress": 3}, {"id": 171, "display": "довезённый", "stress": 5}, {"id": 172, "display": "загнутый", "stress": 1}, {"id": 173, "display": "занятый", "stress": 1}, {"id": 174, "display": "занята", "stress": 5}, {"id": 175, "display": "запёртый", "stress": 3}, {"id": 176, "display": "заселённый", "stress": 5}, {"id": 177, "display": "заселена", "stress": 7}, {"id": 178, "display": "кормящий", "stress": 4}, {"id": 179, "display": "кровоточащий", "stress": 8}, {"id": 180, "display": "наживший", "stress": 3}, {"id": 181, "display": "наливший", "stress": 3}, {"id": 182, "display": "нанявшийся", "stress": 3}, {"id": 183, "display": "начавший", "stress": 3}, {"id": 184, "display": "начатый", "stress": 3}, {"id": 185, "display": "низведённый", "stress": 6}, {"id": 186, "display": "облегчённый", "stress": 6}, {"id": 187, "display": "ободрённый", "stress": 5}, {"id": 188, "display": "обострённый", "stress": 6}, {"id": 189, "display": "отключённый", "stress": 6}, {"id": 190, "display": "повторённый", "stress": 6}, {"id": 191, "display": "поделённый", "stress": 5}, {"id": 192, "display": "понявший", "stress": 3}, {"id": 193, "display": "принятый", "stress": 2}, {"id": 194, "display": "принята", "stress": 6}, {"id": 195, "display": "приручённый", "stress": 6}, {"id": 196, "display": "проживший", "stress": 4}, {"id": 197, "display": "снята", "stress": 4}, {"id": 198, "display": "снятый", "stress": 2}, {"id": 199, "display": "согнутый", "stress": 1}, {"id": 200, "display": "углублённый", "stress": 6}, {"id": 201, "display": "закупорив", "stress": 3}, {"id": 202, "display": "начав", "stress": 3}, {"id": 203, "display": "начавшись", "stress": 3}, {"id": 204, "display": "отдав", "stress": 3}, {"id": 206, "display": "поняв", "stress": 3}, {"id": 207, "display": "прибыв", "stress": 4}, {"id": 208, "display": "создав", "stress": 4}, {"id": 209, "display": "вовремя", "stress": 1}, {"id": 210, "display": "доверху", "stress": 1}, {"id": 211, "display": "донельзя", "stress": 1}, {"id": 212, "display": "донизу", "stress": 1}, {"id": 213, "display": "досуха", "stress": 1}, {"id": 214, "display": "засветло", "stress": 1}, {"id": 215, "display": "затемно", "stress": 1}, {"id": 216, "display": "красивее", "stress": 4}, {"id": 217, "display": "надолго", "stress": 3}, {"id": 218, "display": "ненадолго", "stress": 5}];
+const VOWELS = new Set(["а","е","ё","и","о","у","ы","э","ю","я"]);
+
+let stageWords = [];
+let stageErrors = [];
+let current = 0;
+let stageNumber = 1;
+let answered = false;
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function startGame() {
+    stageWords = shuffle(WORDS);
+    stageErrors = [];
+    current = 0;
+    stageNumber = 1;
+    document.getElementById("game").classList.remove("hidden");
+    document.getElementById("finish").classList.add("hidden");
+    render();
+}
+
+function render() {
+    const item = stageWords[current];
+    answered = false;
+
+    document.getElementById("stageLabel").textContent = "Этап " + stageNumber;
+    document.getElementById("countLabel").textContent =
+        (current + 1) + " / " + stageWords.length;
+    document.getElementById("progressFill").style.width =
+        ((current + 1) / stageWords.length * 100) + "%";
+
+    const feedback = document.getElementById("feedback");
+    feedback.textContent = "";
+    feedback.className = "feedback";
+    document.getElementById("nextBtn").classList.add("hidden");
+
+    const word = document.getElementById("word");
+    word.innerHTML = "";
+
+    [...item.display].forEach((ch, index) => {
+        const span = document.createElement("span");
+        span.textContent = ch;
+        if (VOWELS.has(ch.toLowerCase())) {
+            span.className = "vowel";
+            span.addEventListener("click", () => chooseVowel(index, span));
+        }
+        word.appendChild(span);
+    });
+}
+
+function chooseVowel(index, clicked) {
+    if (answered) return;
+    answered = true;
+
+    document.querySelectorAll(".vowel").forEach(v => {
+        v.style.pointerEvents = "none";
+    });
+
+    const item = stageWords[current];
+    const feedback = document.getElementById("feedback");
+
+    if (index === item.stress) {
+        clicked.classList.add("correct");
+        feedback.textContent = "✓ Правильно!";
+        feedback.className = "feedback correct";
+    } else {
+        clicked.classList.add("wrong");
+        feedback.textContent = "✗ Неверно";
+        feedback.className = "feedback wrong";
+
+        if (!stageErrors.some(x => x.id === item.id)) {
+            stageErrors.push(item);
+        }
+    }
+
+    document.getElementById("nextBtn").classList.remove("hidden");
+}
+
+function nextWord() {
+    if (!answered) return;
+
+    current++;
+
+    if (current < stageWords.length) {
+        render();
+        return;
+    }
+
+    if (stageErrors.length > 0) {
+        stageWords = shuffle(stageErrors);
+        stageErrors = [];
+        current = 0;
+        stageNumber++;
+        render();
+    } else {
+        document.getElementById("game").classList.add("hidden");
+        document.getElementById("finish").classList.remove("hidden");
+    }
+}
+
+document.getElementById("nextBtn").addEventListener("click", nextWord);
+document.getElementById("restartBtn").addEventListener("click", startGame);
+
+if (localStorage.getItem("udareniya-dark") === "1") {
+    document.body.classList.add("dark");
+}
+document.getElementById("themeBtn").addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    localStorage.setItem(
+        "udareniya-dark",
+        document.body.classList.contains("dark") ? "1" : "0"
+    );
+});
+startGame();
+</script>
+</body>
+</html>
